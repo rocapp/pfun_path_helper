@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.10
+
+      - name: Install Poetry
+        run: curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Run tests
+        run: poetry run tox
+
+      - name: Get version
+        run: |
+          VERSION=$(poetry version | awk '{print $NF}')
+          echo "Version: $VERSION"
+
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v$VERSION
+          release_name: Release $VERSION
+          body: |
+            Changes in this release:
+            - ...
+          draft: false
+
+      - name: Publish release
+        if: success() && startsWith(github.ref, 'refs/tags/')
+        run: |
+            poetry config pypi-token.pypi ""
+            poetry publish --build
