@@ -1,8 +1,9 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
 setup(
     name='path_helper',
-    version='0.0.1',
-    packages=find_packages(),
+    description='Helper for appending the package path to sys.path',
+    version='0.0.3',
+    packages=['pfun_path_helper'],
     install_requires=[]
 )
