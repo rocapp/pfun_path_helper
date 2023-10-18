@@ -23,7 +23,9 @@ jobs:
           pip install poetry
 
       - name: Install dependencies
-        run: poetry install
+        run: |
+          apt install -y tox
+          poetry install
 
       - name: Run tests
         run: poetry run tox
