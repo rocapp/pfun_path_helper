@@ -34,15 +34,18 @@ jobs:
         run: |
           VERSION=$(poetry version | awk '{print $NF}')
           echo "Version: $VERSION"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
 
       - name: Create release
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ env.VERSION }}
         with:
-          tag_name: v$VERSION
-          release_name: Release $VERSION
+          tag_name: v${{ env.VERSION }}
+          release_name: Release ${{ env.VERSION }}
           body: |
             Changes in this release:
             - ...
