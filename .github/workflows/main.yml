@@ -7,6 +7,11 @@ on:
 
 jobs:
   release:
+    environment:
+        name: Release
+    permissions:
+        # IMPORTANT: this permission is mandatory for trusted publishing
+        id-token: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -62,9 +67,5 @@ jobs:
           draft: false
         if: steps.check_tag.outputs.tag_exists != 'true'
 
-
-      - name: Publish release
-        if: success()
-        run: |
-            poetry config pypi-token.pypi ""
-            poetry publish --build
+      - name: Publish package
+        uses: pypa/gh-action-pypi-publish@release/v1
