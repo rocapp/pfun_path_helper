@@ -2,10 +2,7 @@
 import sys
 from typing import Optional
 import os
-import pkg_resources
 from setuptools import find_packages
-from site import getsitepackages
-import difflib
 import importlib
 import logging
 
