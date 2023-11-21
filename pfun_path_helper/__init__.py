@@ -11,8 +11,14 @@ logging.basicConfig(level=logging.WARN, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 
-def guess_package_root(directory_path=None, m=3):
-    """guess the most likely package root, starting from the current directory"""
+def guess_package_root(package_name=None, directory_path=None, m=3):
+    """Guess the most likely package root.
+
+    If the package isn't installed, start from the current directory...
+    """
+    if package_name is not None:
+        package = importlib.import_module(package_name)
+        return package.__path__[0]
     cwd = os.path.abspath(os.getcwd())
     if directory_path is None:
         directory_path = cwd
@@ -27,7 +33,7 @@ def guess_package_root(directory_path=None, m=3):
         return directory_path
     else:
         n = 0
-        # walk up, down the directory tree until we find a directory containing a __init__.py
+        # walk up, down the directory tree until we find __init__.py
         # ...or reach m levels of directories
         while n < m:
             for root, _, files in os.walk(directory_path):
@@ -57,7 +63,7 @@ def get_lib_path(package_name: Optional[str] = None,
     Warnings:
         If the specified package is not found in the specified directory, a warning will be logged and the default package location will be used.
     """
-    directory_path = directory_path or guess_package_root()
+    directory_path = directory_path or guess_package_root(package_name=package_name)
     if package_name is None:
         pkgs = find_packages(where=directory_path)
         path_split = directory_path.split(os.sep)
@@ -74,7 +80,38 @@ def get_lib_path(package_name: Optional[str] = None,
     return directory_path
 
 
-def append_path(path: Optional[str | os.PathLike] = None) -> list[str]:
+def get_path(package_name: Optional[str] = None,
+             package_path: Optional[str] = None,
+             resource_filename: Optional[str] = '__init__.py'
+             ) -> str:
+    """
+    Search for the path of the specified resource for the given package.
+
+    Args:
+        package_name (str): The name of the package.
+        package_path (str): The path of the package.
+        resource_filename (str): The name of the resource file.
+
+    Returns:
+        str: The path of the resource file.
+
+    Raises:
+        ValueError: If the resource file is not found in the specified package.
+    """
+    # get top-level package path
+    if package_path is None:
+        package_path = get_lib_path(package_name=package_name)
+    # search for the given filename
+    for root, _, files in os.walk(package_path):
+        if resource_filename in files:
+            return os.path.join(root, resource_filename)
+        for file in files:
+            if file.endswith(resource_filename):
+                return os.path.join(root, file)
+    raise ValueError('Resource file not found.')
+
+
+def append_path(path: Optional[os.PathLike] = None) -> list[str]:
     """
     Append a path to the sys.path list.
 
@@ -90,7 +127,7 @@ def append_path(path: Optional[str | os.PathLike] = None) -> list[str]:
         path = get_lib_path()
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
-    parent = os.path.abspath(os.path.join(path, '..')) 
+    parent = os.path.abspath(os.path.join(path, '..'))
     if str(parent) not in sys.path:
         sys.path.insert(0, str(parent))
     return sys.path

@@ -41,7 +41,6 @@ jobs:
           echo "Version: $VERSION"
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-
       - name: Check if tag exists
         run: |
           if git rev-parse "v${{ env.VERSION }}" >/dev/null 2>&1; then
