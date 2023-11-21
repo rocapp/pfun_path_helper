@@ -36,35 +36,12 @@ jobs:
         run: poetry run tox
 
       - name: Get version
+        id: get_version
         run: |
           VERSION=$(poetry version | awk '{print $NF}')
           echo "Version: $VERSION"
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "::set-output name=VERSION::$VERSION"
 
       - name: Check if tag exists
         run: |
-          if git rev-parse "v${{ env.VERSION }}" >/dev/null 2>&1; then
-            echo "tag_exists='true'" >> $GITHUB_OUTPUT
-          else
-            echo "tag_exists='false'" >> $GITHUB_OUTPUT
-          fi
-        id: check_tag
-
-      - name: Create release
-        id: create_release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ env.VERSION }}
-          TAG_EXISTS: ${{ steps.check_tag.outputs.tag_exists }} != 'true'
-        uses: actions/create-release@v1
-        with:
-          tag_name: v${{ env.VERSION }}
-          release_name: Release ${{ env.VERSION }}
-          body: |
-            Changes in this release:
-            - ...
-          draft: false
-        if: steps.check_tag.outputs.tag_exists != 'true'
-
-      - name: Publish package
-        uses: pypa/gh-action-pypi-publish@release/v1
+          if git rev-parse "v${{ steps.get_version.outputs.VERSION }}" >/dev/null 2>&1; then
