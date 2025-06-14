@@ -40,19 +40,29 @@ jobs:
         run: |
           echo "VERSION=$(poetry version -s)" >> $GITHUB_OUTPUT
 
-      - name: Check if tag exists
+      - name: Create Git tag (if not exists)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if git rev-parse "v${{ steps.get_version.outputs.VERSION }}" >/dev/null 2>&1; then
             echo "Tag v${{ steps.get_version.outputs.VERSION }} already exists. Skipping release."
             exit 0
           fi
-
-      - name: Create Git tag
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
           git tag "v${{ steps.get_version.outputs.VERSION }}"
           git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
           git push origin "v${{ steps.get_version.outputs.VERSION }}"
+
+      - name: Create Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v${{ steps.get_version.outputs.VERSION }}" --title "Release v${{ steps.get_version.outputs.VERSION }}" --notes "Release notes for version ${{ steps.get_version.outputs.VERSION }}"
+          echo "Release v${{ steps.get_version.outputs.VERSION }} created successfully."
+      - name: Upload Release Assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "v${{ steps.get_version.outputs.VERSION }}" dist/* --clobber
+          echo "Assets uploaded for release v${{ steps.get_version.outputs.VERSION }}."
