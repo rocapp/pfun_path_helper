@@ -87,5 +87,5 @@ jobs:
         run: |
           echo "Deploying to PyPI..."
           poetry config pypi-token.pypi ${POETRY_PYPI_TOKEN_PYPI}
-          poetry publish --build --yes
+          poetry publish --build --no-interaction
           echo "Deployment to PyPI completed successfully."
