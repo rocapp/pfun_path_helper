@@ -22,23 +22,23 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install Poetry
+      - name: Install uv
         run: |
           pip install --upgrade pip
-          pip install poetry
+          pip install uv
 
       - name: Install dependencies
         run: |
-          poetry install
-          poetry run pip install tox
+          uv pip install -e .[dev]
 
       - name: Run tests
-        run: poetry run tox
+        run: uvx tox
 
       - name: Get version
         id: get_version
         run: |
-          echo "VERSION=$(poetry version -s)" >> $GITHUB_OUTPUT
+          VERSION=$(python -c "import importlib.metadata; print(importlib.metadata.version('pfun-path-helper'))")
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Create Git tag (remove, if exists)
         env:
@@ -72,20 +72,13 @@ jobs:
           gh release create "v${{ steps.get_version.outputs.VERSION }}" --title "Release v${{ steps.get_version.outputs.VERSION }}" --notes "Release notes for version ${{ steps.get_version.outputs.VERSION }}"
           echo "Release v${{ steps.get_version.outputs.VERSION }} created successfully."
       - name: Upload Release Assets
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Building and uploading assets for release v${{ steps.get_version.outputs.VERSION }}."
-          poetry build
-          echo "Assets built successfully. Uploading to GitHub release..."
+          uv build
           gh release upload "v${{ steps.get_version.outputs.VERSION }}" dist/* --clobber
           echo "Assets uploaded for release v${{ steps.get_version.outputs.VERSION }}."
 
       - name: Deploy to PyPI
         env:
-          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
+          UV_PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
         run: |
-          echo "Deploying to PyPI..."
-          poetry config pypi-token.pypi ${POETRY_PYPI_TOKEN_PYPI}
-          poetry publish --build --no-interaction
-          echo "Deployment to PyPI completed successfully."
+          uv publish --token $UV_PYPI_TOKEN
