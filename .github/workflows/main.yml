@@ -40,15 +40,18 @@ jobs:
         run: |
           echo "VERSION=$(poetry version -s)" >> $GITHUB_OUTPUT
 
-      - name: Create Git tag (if not exists)
+      - name: Create Git tag (remove, if exists)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git fetch --tags
           if git rev-parse "v${{ steps.get_version.outputs.VERSION }}" >/dev/null 2>&1; then
-            echo "Tag v${{ steps.get_version.outputs.VERSION }} already exists. Skipping release."
-            exit 0
+            echo "Tag v${{ steps.get_version.outputs.VERSION }} already exists. Deleting it."
+            git tag -d "v${{ steps.get_version.outputs.VERSION }}"
+            git push origin --delete "v${{ steps.get_version.outputs.VERSION }}"
+            echo "Tag v${{ steps.get_version.outputs.VERSION }} deleted."
           fi
+          echo "Creating new tag v${{ steps.get_version.outputs.VERSION }}"
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
           git tag "v${{ steps.get_version.outputs.VERSION }}"
