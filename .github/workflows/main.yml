@@ -68,5 +68,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          echo "Building and uploading assets for release v${{ steps.get_version.outputs.VERSION }}."
+          poetry build
+          echo "Assets built successfully. Uploading to GitHub release..."
           gh release upload "v${{ steps.get_version.outputs.VERSION }}" dist/* --clobber
           echo "Assets uploaded for release v${{ steps.get_version.outputs.VERSION }}."
