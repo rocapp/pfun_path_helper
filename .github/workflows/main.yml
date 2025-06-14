@@ -29,7 +29,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv pip install .
+          uv venv && \
+            uv pip install .
 
       - name: Run tests
         run: uvx tox
