@@ -62,6 +62,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          echo "Checking if release already exists for version ${{ steps.get_version.outputs.VERSION }}."
+          if gh release view "v${{ steps.get_version.outputs.VERSION }}" >/dev/null 2>&1; then
+            echo "Release v${{ steps.get_version.outputs.VERSION }} already exists. deleting it."
+            gh release delete "v${{ steps.get_version.outputs.VERSION }}" --yes
+            echo "Existing Release v${{ steps.get_version.outputs.VERSION }} deleted."
+          fi
+          echo "Creating GitHub release for version ${{ steps.get_version.outputs.VERSION }}."
           gh release create "v${{ steps.get_version.outputs.VERSION }}" --title "Release v${{ steps.get_version.outputs.VERSION }}" --notes "Release notes for version ${{ steps.get_version.outputs.VERSION }}"
           echo "Release v${{ steps.get_version.outputs.VERSION }} created successfully."
       - name: Upload Release Assets
@@ -73,3 +80,12 @@ jobs:
           echo "Assets built successfully. Uploading to GitHub release..."
           gh release upload "v${{ steps.get_version.outputs.VERSION }}" dist/* --clobber
           echo "Assets uploaded for release v${{ steps.get_version.outputs.VERSION }}."
+
+      - name: Deploy to PyPI
+        env:
+          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          echo "Deploying to PyPI..."
+          poetry config pypi-token.pypi ${POETRY_PYPI_TOKEN_PYPI}
+          poetry publish --build
+          echo "Deployment to PyPI completed successfully."
