@@ -8,17 +8,16 @@ on:
 jobs:
   release:
     environment:
-        name: Release
+      name: Release
     permissions:
-        # IMPORTANT: this permission is mandatory for trusted publishing
-        id-token: write
+      id-token: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
@@ -29,8 +28,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          poetry run pip install tox
           poetry install
+          poetry run pip install tox
 
       - name: Run tests
         run: poetry run tox
@@ -38,10 +37,18 @@ jobs:
       - name: Get version
         id: get_version
         run: |
-          VERSION=$(poetry version | awk '{print $NF}')
-          echo "Version: $VERSION"
-          echo "::set-output name=VERSION::$VERSION"
+          echo "VERSION=$(poetry version -s)" >> $GITHUB_OUTPUT
 
       - name: Check if tag exists
         run: |
           if git rev-parse "v${{ steps.get_version.outputs.VERSION }}" >/dev/null 2>&1; then
+            echo "Tag v${{ steps.get_version.outputs.VERSION }} already exists. Skipping release."
+            exit 0
+          fi
+
+      - name: Create Git tag
+        run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
+          git tag "v${{ steps.get_version.outputs.VERSION }}"
+          git push origin "v${{ steps.get_version.outputs.VERSION }}"
